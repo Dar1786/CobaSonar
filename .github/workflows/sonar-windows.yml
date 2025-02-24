@@ -1,0 +1,37 @@
+name: SonarQube Analysis (Windows)
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  sonar:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up SonarScanner
+        run: |
+          Invoke-WebRequest -Uri "https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-5.0.1.3006-windows.zip" -OutFile "sonar-scanner.zip"
+          Expand-Archive -Path sonar-scanner.zip -DestinationPath $Env:RUNNER_TEMP -Force
+          echo "$Env:RUNNER_TEMP\sonar-scanner-5.0.1.3006-windows\bin" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Run SonarQube Scan
+        run: |
+          sonar-scanner.bat `
+            -Dsonar.projectKey=MyProject `
+            -Dsonar.sources=. `
+            -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} `
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
